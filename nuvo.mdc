@@ -1,0 +1,14 @@
+---
+description: Nuvo Circle project conventions
+alwaysApply: true
+---
+- Source of truth is PROJECT_BRIEF.md. If code and brief disagree, the brief wins.
+- Next.js App Router, TypeScript strict, Tailwind, Zustand (persist), Framer Motion, lucide-react.
+- lib/game must stay pure TypeScript with no React imports, and every function there has a unit test.
+- All copy goes through t() and data/strings.en.ts. Content lives in data/*.ts.
+- Design: 2px borders, 16px radius, no box-shadows except focus rings, chunky buttons use a 4px darker bottom border.
+- Never add real money, auth, backend or third-party analytics. Children appear as nickname + avatar only.
+- Tone: warm and encouraging. No guilt, shame or doom messaging.
+- Do not invent statistics. Add // TODO(verify) where a fact needs a source.
+- Respect prefers-reduced-motion. Keep everything keyboard accessible.
+- Build only the phase requested.
