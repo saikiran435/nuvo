@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nuvo Circle — clickable wireframe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green: #58CC02;
+    --green-dark: #3C8C0A;
+    --green-deep: #2B7A0B;
+    --green-pale: #EAF9D8;
+    --blue: #1CB0F6;
+    --blue-dark: #1594CC;
+    --blue-pale: #E1F5FE;
+    --purple: #CE82FF;
+    --purple-dark: #A557D6;
+    --purple-pale: #F5E9FF;
+    --gold: #FFC800;
+    --gold-dark: #E0A800;
+    --gold-pale: #FFF6D9;
+    --orange: #FF9600;
+    --orange-dark: #DB7F00;
+    --pink: #FF86D0;
+    --pink-dark: #D65AA8;
+    --ink: #3C3C3C;
+    --ink-soft: #6B6B6B;
+    --ink-mute: #AFAFAF;
+    --line: #E5E5E5;
+    --bg: #FFFFFF;
+    --bg-soft: #F7F7F7;
+    --cream: #FFF3D6;
+    --display: "Baloo 2", system-ui, sans-serif;
+    --body: "Nunito", system-ui, sans-serif;
+    --chiku-scale: #6CCB2C;
+    --chiku-scale-dark: #3F9A0C;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--body);
+    color: var(--ink);
+    background: #ececec;
+    min-height: 100vh;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--blue-dark); outline-offset: 2px; }
+  h1, h2, h3, .display { font-family: var(--display); font-weight: 700; margin: 0; }
+  p { margin: 0; }
+
+  .chrome {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 14px;
+    background: #1f1f1f;
+    color: white;
+  }
+  .chrome strong { font-family: var(--display); font-weight: 700; margin-right: 6px; }
+  .chrome span.note { color: #cfcfcf; font-size: 13px; }
+  .chrome button {
+    background: #333;
+    color: white;
+    border: 2px solid #555;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-family: var(--display);
+    font-size: 14px;
+  }
+  .chrome button[aria-pressed="true"] { background: var(--green); color: var(--ink); border-color: var(--green-dark); }
+
+  .stage { display: flex; justify-content: center; padding: 18px 12px 40px; }
+  .app {
+    width: min(1120px, 100%);
+    background: var(--bg);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+    min-height: 760px;
+    display: flex;
+    flex-direction: column;
+  }
+  .app.phone { width: 390px; min-height: 780px; border-radius: 28px; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 2px solid var(--line);
+    background: var(--bg);
+  }
+  .brand { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; }
+  .brand b { font-family: var(--display); font-size: 22px; }
+  .spacer { flex: 1; }
+  .stat {
+    display: flex; align-items: center; gap: 6px;
+    border: 2px solid var(--line); border-radius: 999px;
+    padding: 4px 10px; background: var(--bg);
+    font-family: var(--display); font-size: 16px;
+  }
+  .stat.flame { color: var(--orange-dark); }
+  .stat.gc { background: var(--gold-pale); border-color: var(--gold); }
+  .lvl {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--green-pale); border: 2px solid var(--green);
+    display: grid; place-items: center;
+    font-family: var(--display); color: var(--green-deep);
+  }
+  .avatar-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2px solid var(--line); background: var(--blue-pale); padding: 0;
+    font-size: 20px;
+  }
+
+  .shell { display: grid; grid-template-columns: 196px 1fr 296px; flex: 1; min-height: 0; }
+  .nav, .rail { padding: 14px; }
+  .nav { border-right: 2px solid var(--line); }
+  .rail { border-left: 2px solid var(--line); background: var(--bg-soft); display: flex; flex-direction: column; gap: 12px; }
+  .main { padding: 16px 18px 28px; overflow: auto; }
+  .nav button, .tabbar button {
+    width: 100%; text-align: left; background: transparent; border: 0;
+    border-radius: 12px; padding: 10px 12px;
+    font-family: var(--display); font-size: 16px; color: var(--ink-soft);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .nav button[aria-current="page"], .tabbar button[aria-current="page"] {
+    background: var(--green-pale); color: var(--green-deep);
+  }
+  .tabbar { display: none; border-top: 2px solid var(--line); background: white; }
+  .tabbar button { justify-content: center; flex-direction: column; font-size: 12px; gap: 2px; padding: 8px 4px; }
+  .today { display: none; }
+
+  .card {
+    background: white;
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+  }
+  .callout { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .callout .bubble { flex: 1; }
+  .kicker { font-family: var(--display); color: var(--green-deep); font-size: 14px; }
+
+  .banner {
+    border-radius: 16px; color: var(--ink); padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 8px 0 0;
+  }
+  .banner h2 { font-size: 26px; }
+  .banner p { font-weight: 700; }
+  .banner.water { background: var(--blue); }
+  .banner.waste { background: var(--purple); }
+  .banner.nature { background: var(--green); }
+  .banner.locked { background: #dedede; color: var(--ink-soft); }
+  .banner .count { font-family: var(--display); font-size: 18px; }
+
+  .path {
+    position: relative;
+    height: 560px;
+    margin: 4px 0 8px;
+  }
+  .path svg.trail { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .node {
+    position: absolute;
+    width: 68px; height: 68px; border-radius: 50%;
+    border: 0; border-bottom: 6px solid var(--green-dark);
+    background: var(--green); color: var(--ink);
+    display: grid; place-items: center;
+    transform: translate(-50%, -50%);
+    font-family: var(--display); font-size: 22px;
+  }
+  .node.done { background: var(--green); border-bottom-color: var(--green-dark); }
+  .node.current {
+    width: 82px; height: 82px;
+    background: var(--gold); border-bottom-color: var(--gold-dark);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .node.locked {
+    background: white; border: 2px solid var(--line); border-bottom: 6px solid #cfcfcf;
+    color: var(--ink-mute);
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 200, 0, 0.55); }
+    70% { box-shadow: 0 0 0 12px rgba(255, 200, 0, 0); }
+  }
+  .more { text-align: center; color: var(--ink-soft); margin: 8px 0 16px; font-weight: 700; }
+
+  .btn {
+    font-family: var(--display);
+    background: var(--green);
+    color: var(--ink);
+    border: 0;
+    border-bottom: 4px solid var(--green-dark);
+    border-radius: 13px;
+    padding: 10px 16px;
+    font-size: 16px;
+  }
+  .btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+  .btn.blue { background: var(--blue); border-bottom-color: var(--blue-dark); }
+  .btn.gold { background: var(--gold); border-bottom-color: var(--gold-dark); }
+  .btn.ghost {
+    background: white; border: 2px solid var(--line); border-bottom-width: 4px;
+  }
+  .btn.full { width: 100%; }
+  .btn:disabled { background: var(--bg-soft); border-bottom-color: var(--line); color: var(--ink-mute); }
+
+  .row { display: flex; gap: 8px; align-items: center; }
+  .between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .muted { color: var(--ink-soft); }
+  .tiny { color: var(--ink-mute); font-size: 13px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 999px; padding: 2px 8px;
+    font-family: var(--display); font-size: 13px;
+    background: var(--gold-pale); border: 2px solid var(--gold);
+  }
+  .pill.green { background: var(--green-pale); border-color: var(--green); }
+  .pill.grey { background: var(--bg-soft); border-color: var(--line); color: var(--ink-soft); }
+  .pill.pink { background: #ffe6f6; border-color: var(--pink); }
+
+  .bar {
+    height: 12px; border-radius: 999px; background: var(--bg-soft);
+    border: 2px solid var(--line); overflow: hidden;
+  }
+  .bar > span { display: block; height: 100%; background: var(--green); }
+  .quest { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; align-items: center; }
+  .quest .bar { grid-column: 1 / -1; }
+
+  .sheet {
+    position: absolute; left: 16px; right: 16px; bottom: 16px;
+    z-index: 5;
+  }
+  .path-wrap { position: relative; }
+
+  .stepper { display: flex; gap: 6px; margin-bottom: 12px; }
+  .stepper button {
+    flex: 1; border-radius: 12px; border: 2px solid var(--line);
+    background: white; padding: 8px; font-family: var(--display);
+  }
+  .stepper button[aria-current="step"] { background: var(--blue-pale); border-color: var(--blue); }
+
+  .option, .choice {
+    width: 100%; text-align: left;
+    background: white; border: 2px solid var(--line); border-bottom-width: 4px;
+    border-radius: 13px; padding: 12px 14px; margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .option[aria-pressed="true"], .choice.correct { border-color: var(--green); background: var(--green-pale); }
+  .choice.learn { border-color: var(--gold); background: var(--gold-pale); }
+  .chip {
+    border: 2px solid var(--line); background: white; border-radius: 999px;
+    padding: 6px 12px; font-family: var(--display);
+  }
+  .chip[aria-pressed="true"] { background: var(--orange); border-color: var(--orange-dark); }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tabs button {
+    border: 2px solid var(--line); background: white; border-radius: 999px;
+    padding: 6px 12px; font-family: var(--display);
+  }
+  .tabs button[aria-selected="true"] { background: var(--ink); color: white; border-color: var(--ink); }
+
+  .league-row, .hist {
+    display: grid; grid-template-columns: 28px 36px 1fr auto;
+    gap: 8px; align-items: center;
+    padding: 8px; border-radius: 12px;
+  }
+  .league-row.you { background: var(--gold-pale); border: 2px solid var(--gold); }
+  .divider {
+    text-align: center; color: var(--green-deep); font-family: var(--display);
+    font-size: 13px; margin: 6px 0; padding: 4px;
+    border-top: 2px dashed var(--green);
+  }
+  .hero {
+    background: var(--blue-pale); border: 2px solid var(--blue); border-radius: 16px;
+    padding: 16px; display: flex; gap: 12px; align-items: center; margin-bottom: 12px;
+  }
+  .lock-badge { font-family: var(--display); font-size: 13px; color: var(--ink-soft); }
+
+  .dots { display: flex; gap: 6px; justify-content: center; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); display: block; }
+  .dots i.on { background: var(--green-deep); }
+
+  .badge {
+    aspect-ratio: 1; border: 2px solid var(--line); border-radius: 16px;
+    display: grid; place-items: center; text-align: center; padding: 8px;
+    font-family: var(--display); font-size: 13px; background: white;
+  }
+  .badge.earned { background: var(--green-pale); border-color: var(--green); }
+  .badge.locked { color: var(--ink-mute); }
+
+  .ring {
+    width: 72px; height: 72px; border-radius: 50%;
+    display: grid; place-items: center; font-family: var(--display);
+    border: 8px solid var(--line); background: white;
+  }
+
+  .modal-back {
+    position: fixed; inset: 0; background: rgba(0,0,0,.35);
+    display: grid; place-items: center; z-index: 40; padding: 16px;
+  }
+  .modal { width: min(420px, 100%); }
+
+  .mascot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .mascot-cell { text-align: center; }
+  .sizes { display: flex; gap: 14px; align-items: end; flex-wrap: wrap; }
+
+  .menu {
+    position: absolute; right: 12px; top: 58px; width: 200px; z-index: 6;
+  }
+  .menu button { width: 100%; text-align: left; background: white; border: 0; border-radius: 10px; padding: 8px; font-family: var(--display); }
+  .hidden { display: none !important; }
+
+  @media (max-width: 900px) {
+    .stage { padding: 0; }
+    .app { width: 100%; border-radius: 0; border: 0; min-height: 100vh; }
+    .shell { grid-template-columns: 1fr; }
+    .nav, .rail { display: none; }
+    .tabbar { display: flex; }
+    .today { display: block; margin-bottom: 12px; }
+    .grid3 { grid-template-columns: 1fr 1fr; }
+  }
+  .app.phone .shell { grid-template-columns: 1fr; }
+  .app.phone .nav, .app.phone .rail { display: none; }
+  .app.phone .tabbar { display: flex; }
+  .app.phone .today { display: block; margin-bottom: 12px; }
+  .app.phone .topbar .stat.lvl-label { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .node.current { animation: none; }
+    .bounce { animation: none !important; }
+  }
+  .bounce { animation: bounce 0.8s ease; }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+  }
+  .confetti { position: relative; }
+  .confetti i {
+    position: absolute; width: 6px; height: 6px; border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+<!--
+  Reference wireframe for Nuvo Circle prototype v0.
+  Drawn from PROJECT_BRIEF.md sections 4, 5 and 8.
+  Illustrative demo values only (Level 4, 1,240 GC, Ishaan).
+  The brief wins if this file and the brief disagree.
+-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="chk-scales" width="12" height="10" patternUnits="userSpaceOnUse">
+      <path d="M0,10 Q6,2 12,10" fill="none" stroke="var(--chiku-scale-dark,#2F8F00)" stroke-width="1.8"/>
+      <path d="M-6,5 Q0,-3 6,5" fill="none" stroke="var(--chiku-scale-dark,#2F8F00)" stroke-width="1.8"/>
+      <path d="M6,5 Q12,-3 18,5" fill="none" stroke="var(--chiku-scale-dark,#2F8F00)" stroke-width="1.8"/>
+    </pattern>
+    <clipPath id="chk-body"><ellipse cx="54" cy="72" rx="30" ry="31"/></clipPath>
+    <clipPath id="chk-head"><circle cx="62" cy="34" r="19"/></clipPath>
+    <clipPath id="chk-tail"><path d="M38,84 C18,100 0,88 6,68 C9,58 18,58 18,64 C14,74 24,80 44,72 Z"/></clipPath>
+    <g id="chiku-body">
+      <path d="M38,84 C18,100 0,88 6,68 C9,58 18,58 18,64 C14,74 24,80 44,72 Z" fill="var(--chiku-scale,#58CC02)"/>
+      <rect x="0" y="55" width="48" height="50" fill="url(#chk-scales)" clip-path="url(#chk-tail)"/>
+      <ellipse cx="46" cy="101" rx="11" ry="5.5" fill="#F4DDB0"/>
+      <ellipse cx="68" cy="101" rx="11" ry="5.5" fill="#F4DDB0"/>
+      <ellipse cx="54" cy="72" rx="30" ry="31" fill="var(--chiku-scale,#58CC02)"/>
+      <rect x="22" y="40" width="64" height="64" fill="url(#chk-scales)" clip-path="url(#chk-body)"/>
+      <ellipse cx="66" cy="78" rx="14" ry="22" fill="#F4DDB0"/>
+      <circle cx="62" cy="34" r="19" fill="var(--chiku-scale,#58CC02)"/>
+      <rect x="40" y="12" width="44" height="44" fill="url(#chk-scales)" clip-path="url(#chk-head)"/>
+      <path d="M58,40 C58,28 74,26 82,33 L99,42 C100,47 92,50 84,50 C70,52 58,50 58,40 Z" fill="#F4DDB0"/>
+      <circle cx="98" cy="43" r="3" fill="#5C4326"/>
+    </g>
+    <g id="chiku-face-idle">
+      <circle cx="73" cy="35" r="4.6" fill="#2B2B2B"/>
+      <circle cx="74.6" cy="33.4" r="1.6" fill="#fff"/>
+      <ellipse cx="71" cy="45" rx="3.6" ry="2.4" fill="#FFB4A0"/>
+      <path d="M83,47 Q88,50.5 93,47" stroke="#8A6A3A" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+    </g>
+    <g id="chiku-face-happy">
+      <path d="M69,36 Q73,31 77,36" stroke="#2B2B2B" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="71" cy="45" rx="3.6" ry="2.4" fill="#FFB4A0"/>
+      <path d="M81,45 Q88,54 95,45" stroke="#8A6A3A" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+    </g>
+    <g id="chiku-face-thinking">
+      <circle cx="75.5" cy="32.5" r="4.6" fill="#2B2B2B"/>
+      <circle cx="77" cy="31" r="1.6" fill="#fff"/>
+      <ellipse cx="71" cy="45" rx="3.6" ry="2.4" fill="#FFB4A0"/>
+      <ellipse cx="88" cy="48" rx="2.3" ry="2.6" fill="none" stroke="#8A6A3A" stroke-width="1.6"/>
+    </g>
+    <g id="chiku-face-sleepy">
+      <path d="M69,35 Q73,38 77,35" stroke="#2B2B2B" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="71" cy="45" rx="3.6" ry="2.4" fill="#FFB4A0"/>
+      <path d="M84,48 Q88,50 92,48" stroke="#8A6A3A" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <text x="96" y="22" font-size="12" font-family="Nunito, sans-serif" fill="#6B6B6B">z</text>
+    </g>
+    <g id="chiku-curled">
+      <ellipse cx="55" cy="62" rx="34" ry="32" fill="var(--chiku-scale,#58CC02)"/>
+      <ellipse cx="55" cy="66" rx="16" ry="18" fill="#F4DDB0"/>
+      <circle cx="70" cy="52" r="6" fill="#F4DDB0"/>
+      <circle cx="78" cy="50" r="2" fill="#5C4326"/>
+      <path d="M64,56 Q67,58 70,56" stroke="#8A6A3A" stroke-width="1.4" fill="none"/>
+    </g>
+    <g id="chiku-scarf">
+      <path d="M48,50 Q62,62 84,48" fill="none" stroke="#FFC800" stroke-width="5" stroke-linecap="round"/>
+    </g>
+  </defs>
+</svg>
+
+<div class="chrome">
+  <strong>Nuvo wireframe</strong>
+  <span class="note">Illustrative numbers. Brief wins if they differ.</span>
+  <button type="button" id="desk" aria-pressed="true">Desktop</button>
+  <button type="button" id="phone" aria-pressed="false">Phone</button>
+  <button type="button" data-screen="welcome">Welcome</button>
+  <button type="button" data-screen="path">Path</button>
+  <button type="button" data-screen="mission">Mission</button>
+  <button type="button" data-screen="quizzes">Quizzes</button>
+  <button type="button" data-screen="quiz">Quiz play</button>
+  <button type="button" data-screen="stories">Stories</button>
+  <button type="button" data-screen="story">Story</button>
+  <button type="button" data-screen="league">League</button>
+  <button type="button" data-screen="shop">Shop</button>
+  <button type="button" data-screen="me">Passport</button>
+  <button type="button" data-screen="parent">Parent</button>
+  <button type="button" data-screen="teacher">Teacher</button>
+  <button type="button" data-screen="mascot">Chiku</button>
+  <button type="button" data-screen="dev">Dev</button>
+</div>
+
+<div class="stage">
+  <div class="app" id="app">
+    <header class="topbar" id="topbar">
+      <button class="brand" type="button" data-screen="path" aria-label="Nuvo home">
+        <span id="logo-chiku"></span>
+        <b>Nuvo</b>
+      </button>
+      <div class="spacer"></div>
+      <div class="stat flame" title="Day streak">🔥 6</div>
+      <div class="stat gc" title="Green Credits">● 1,240</div>
+      <div class="lvl" title="Level 4, Nature explorer">4</div>
+      <button class="avatar-btn" type="button" id="avatar" aria-label="Profile menu">💧</button>
+    </header>
+    <div class="menu card hidden" id="menu">
+      <button type="button" data-screen="me">Passport</button>
+      <button type="button" data-screen="dev">Switch role</button>
+    </div>
+
+    <div class="shell" id="shell">
+      <nav class="nav" aria-label="Main">
+        <button type="button" data-screen="path" aria-current="page">🌿 Path</button>
+        <button type="button" data-screen="quizzes">❓ Quizzes</button>
+        <button type="button" data-screen="stories">📖 Stories</button>
+        <button type="button" data-screen="league">🏆 League</button>
+        <button type="button" data-screen="shop">🎁 Shop</button>
+      </nav>
+      <main class="main" id="main"></main>
+      <aside class="rail" id="rail" aria-label="Today"></aside>
+    </div>
+    <nav class="tabbar" aria-label="Mobile">
+      <button type="button" data-screen="path">🌿<span>Path</span></button>
+      <button type="button" data-screen="quizzes">❓<span>Quizzes</span></button>
+      <button type="button" data-screen="stories">📖<span>Stories</span></button>
+      <button type="button" data-screen="league">🏆<span>League</span></button>
+      <button type="button" data-screen="shop">🎁<span>Shop</span></button>
+    </nav>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+const TRAIL = "M75,36 C75,78 225,70 225,124 C225,178 75,168 75,232 C75,286 225,276 225,340 C225,394 75,384 75,448";
+
+function chiku(mood, size, level) {
+  const scale = level >= 5 ? "#58CC02" : level >= 3 ? "#6CCB2C" : "#A9D98A";
+  const dark = level >= 5 ? "#2F8F00" : level >= 3 ? "#3F9A0C" : "#86BD64";
+  const face = mood === "curled" ? "" : `<use href="#chiku-face-${mood === "celebrate" ? "happy" : mood}"/>`;
+  const body = mood === "curled" ? `<use href="#chiku-curled"/>` : `<use href="#chiku-body"/>${face}`;
+  const scarf = level >= 5 ? `<use href="#chiku-scarf"/>` : "";
+  const bounce = mood === "celebrate" ? " bounce" : "";
+  return `<span class="confetti${bounce}" style="display:inline-block;width:${size}px;height:${size}px;--chiku-scale:${scale};--chiku-scale-dark:${dark}">
+    <svg viewBox="0 0 110 110" width="${size}" height="${size}" aria-hidden="true">${body}${scarf}</svg>
+  </span>`;
+}
+
+const rail = () => `
+  <section class="card stack">
+    <h3>Daily quests</h3>
+    <div class="quest"><span>Finish 2 missions</span><span class="pill">+20</span>
+      <div class="bar" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="2" aria-label="Finish 2 missions"><span style="width:50%"></span></div>
+    </div>
+    <div class="quest"><span>Score 80% on a quiz</span><span class="pill">+15</span>
+      <div class="bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="1" aria-label="Score 80% on a quiz"><span style="width:0%"></span></div>
+    </div>
+    <div class="quest"><span>Keep your streak</span><span class="pill green">Done</span>
+      <div class="bar" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1" aria-label="Keep your streak"><span style="width:100%"></span></div>
+    </div>
+  </section>
+  <section class="card stack">
+    <div class="between"><h3>Banyan league</h3><span class="tiny">This week</span></div>
+    <div class="league-row"><b>1</b><span>🌱</span><span>Aanya</span><b>2,400</b></div>
+    <div class="league-row"><b>2</b><span>🐦</span><span>Kabir</span><b>2,180</b></div>
+    <div class="league-row you"><b>7</b><span>💧</span><span>Ishaan</span><b>1,240</b></div>
+    <button class="btn ghost full" type="button" data-screen="league">See league</button>
+  </section>
+  <section class="card stack">
+    <div class="row">${chiku("idle", 48, 4)}<div><p class="kicker">Chiku's shop</p><h3>Urban bird walk</h3><p class="muted">900 GC · hosted nearby</p></div></div>
+    <button class="btn full" type="button" data-screen="shop">Visit shop</button>
+  </section>
+`;
+
+const today = () => `
+  <section class="card today stack">
+    <h3>Today</h3>
+    <p>1 of 2 missions · quiz still open · streak safe</p>
+    <button class="btn ghost" type="button" data-screen="league">Banyan league · you are 7th</button>
+  </section>
+`;
+
+const screens = {
+  path() {
+    return `
+      ${today()}
+      <section class="card callout">
+        ${chiku("idle", 72, 4)}
+        <div class="bubble">
+          <p class="kicker">Chiku says…</p>
+          <p>Water detective is ready. Find three places water slips away at home. You are good at noticing things.</p>
+        </div>
+      </section>
+      <article class="path-wrap">
+        <div class="banner water">
+          <div><h2>Water</h2><p>3 of 5 missions complete</p></div>
+          <span class="count">💧</span>
+        </div>
+        <div class="path">
+          <svg class="trail" viewBox="0 0 300 520" preserveAspectRatio="none" aria-hidden="true">
+            <path d="${TRAIL}" fill="none" stroke="#B3E5FC" stroke-width="10" stroke-dasharray="2 14" stroke-linecap="round"/>
+          </svg>
+          <button class="node done" style="left:25%;top:36px" data-node="done" type="button" aria-label="Tap-off challenge, done">✓</button>
+          <button class="node done" style="left:75%;top:124px" data-node="done" type="button" aria-label="Leak hunt, done">✓</button>
+          <button class="node done" style="left:25%;top:232px" data-node="done" type="button" aria-label="Rain watcher, done">✓</button>
+          <button class="node current" style="left:75%;top:340px" data-node="current" type="button" aria-label="Water detective, current mission">4</button>
+          <button class="node locked" style="left:25%;top:448px" data-node="locked" type="button" aria-label="Water map, locked">🔒</button>
+        </div>
+        <div class="card sheet hidden" id="sheet"></div>
+      </article>
+      <div class="banner locked"><div><h2>Waste</h2><p>Unlocks when Water is complete</p></div><span>🔒</span></div>
+      <div class="path" style="height:240px">
+        <svg class="trail" viewBox="0 0 300 220" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M75,30 C75,70 225,60 225,110 C225,160 75,150 75,190" fill="none" stroke="#E5E5E5" stroke-width="10" stroke-dasharray="2 14" stroke-linecap="round"/>
+        </svg>
+        <button class="node locked" style="left:25%;top:30px" type="button" aria-label="Locked">🔒</button>
+        <button class="node locked" style="left:75%;top:110px" type="button" aria-label="Locked">🔒</button>
+        <button class="node locked" style="left:25%;top:190px" type="button" aria-label="Locked">🔒</button>
+      </div>
+      <p class="more">More worlds unlock as you progress</p>
+    `;
+  },
+  mission() {
+    return `
+      <p class="kicker">Water · mission 4</p>
+      <h2>Water detective</h2>
+      <p class="muted" style="margin:4px 0 12px">+80 GC · photo · a grown-up checks this one</p>
+      <div class="stepper" role="tablist">
+        <button type="button" data-step="learn" aria-current="step">Learn</button>
+        <button type="button" data-step="do">Do</button>
+        <button type="button" data-step="prove">Prove</button>
+        <button type="button" data-step="reflect">Reflect</button>
+      </div>
+      <div class="card stack" id="step-body"></div>
+    `;
+  },
+  quizzes() {
+    return `
+      <h2>Quizzes</h2>
+      <p class="muted" style="margin:4px 0 12px">A gentle quiz. Wrong answers are just another way to learn.</p>
+      <div class="grid2">
+        ${quizCard("Myth or fact", "5 questions in this prototype", "purple")}
+        ${quizCard("Water wise", "5 questions in this prototype", "blue")}
+        ${quizCard("Waste sorting", "5 questions in this prototype", "purple")}
+        ${quizCard("Climate basics", "5 questions in this prototype", "green")}
+      </div>
+    `;
+  },
+  quiz() {
+    return `
+      <div class="between"><p class="kicker">Water wise · 2 of 5</p><button class="btn ghost" type="button" data-screen="quizzes">Close</button></div>
+      <div class="bar" role="progressbar" aria-valuenow="2" aria-valuemin="0" aria-valuemax="5" aria-label="Quiz progress" style="margin:10px 0"><span style="width:40%"></span></div>
+      <div class="row" style="margin-bottom:10px">${chiku("thinking", 72, 4)}<h2>Which one is mostly rain, saved for later?</h2></div>
+      <button class="choice" type="button">A bottle of drinking water from a shop</button>
+      <button class="choice correct" type="button">A bucket under a roof pipe</button>
+      <button class="choice" type="button">Water left running while you soap your hands</button>
+      <div class="card" style="margin-top:8px">
+        <p class="kicker">Good try, here's why</p>
+        <p>A bucket under a roof pipe catches rain you can use for plants. Chiku likes that kind of noticing.</p>
+      </div>
+    `;
+  },
+  stories() {
+    return `
+      <h2>Stories</h2>
+      <div class="tabs" role="tablist">
+        <button type="button" aria-selected="true">Stories</button>
+        <button type="button" aria-selected="false">Mini-games</button>
+        <button type="button" aria-selected="false">How-to</button>
+      </div>
+      <article class="hero">
+        ${chiku("idle", 72, 4)}
+        <div>
+          <p class="kicker">Hosted by Chiku</p>
+          <h2>Why does Bengaluru run out of water?</h2>
+          <p class="muted">About 3 minutes · unlocked by 3 Water missions</p>
+          <button class="btn" type="button" data-screen="story" style="margin-top:8px">Read</button>
+        </div>
+      </article>
+      <div class="grid2">
+        <article class="card stack"><h3>What happens to a plastic bottle?</h3><p class="muted">Unlocked</p><button class="btn ghost" type="button" data-screen="story">Read</button></article>
+        <article class="card stack"><h3>Meet the pollinators</h3><p class="muted">Unlocked</p><button class="btn ghost" type="button">Read</button></article>
+        <article class="card stack"><h3>Build a rain garden</h3><p class="lock-badge">🔒 Unlocks at 1,500 GC</p></article>
+        <article class="card stack"><h3>Climate mysteries: the missing lake</h3><p class="lock-badge">🔒 Unlocks at Level 5</p></article>
+        <article class="card stack" style="grid-column:1/-1"><h3>Mini-games</h3><p>Coming soon. Chiku is still drawing the pieces.</p></article>
+      </div>
+    `;
+  },
+  story() {
+    return `
+      <div class="between"><p class="kicker">Hosted by Chiku · slide 2 of 6</p><button class="btn ghost" type="button" data-screen="stories">Close</button></div>
+      <div class="card stack" style="min-height:280px;margin-top:12px;align-items:center;text-align:center">
+        ${chiku("happy", 96, 4)}
+        <h2>Lakes remember rain</h2>
+        <p>When lakes and tanks stay connected, the city has somewhere to keep the monsoon. When they are filled in, rain has nowhere to rest.</p>
+        <div class="dots"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <button class="btn" type="button">Next</button>
+      </div>
+    `;
+  },
+  league() {
+    const rows = [
+      ["1","Aanya","2,400"],["2","Kabir","2,180"],["3","Meera","1,960"],
+      ["4","Arjun","1,740"],["5","Diya","1,510"],["6","Rohan","1,360"],
+      ["7","Ishaan","1,240"],["8","Sara","1,120"],["9","Vivaan","980"]
+    ];
+    const list = rows.map((r, i) => {
+      const you = r[1] === "Ishaan" ? " you" : "";
+      const split = i === 5 ? `<div class="divider">Promotion zone ends here</div>` : "";
+      return `${split}<div class="league-row${you}"><b>${r[0]}</b><span>${r[1]==="Ishaan"?"💧":"🌱"}</span><span>${r[1]}</span><b>${r[2]}</b></div>`;
+    }).join("");
+    return `
+      <div class="banner nature"><div><p class="kicker" style="color:var(--ink)">This week</p><h2>Banyan league</h2></div><span>Top 5 move up</span></div>
+      <div class="tabs" role="tablist" style="margin-top:12px">
+        <button type="button" aria-selected="true">Class</button>
+        <button type="button" aria-selected="false" id="school-tab">School</button>
+        <button type="button" aria-selected="false" id="city-tab">City</button>
+      </div>
+      <div id="league-body" class="card" style="padding:8px">${list}<p class="tiny" style="padding:8px">Nicknames and avatars only. Resets Sunday evening.</p></div>
+    `;
+  },
+  shop() {
+    return `
+      <h2>Shop</h2>
+      <p class="muted">Green Credits are earned, never bought.</p>
+      <div class="tabs" role="tablist">
+        <button type="button" aria-selected="true">Experiences</button>
+        <button type="button">Workshops</button>
+        <button type="button">Products</button>
+        <button type="button">Badges</button>
+      </div>
+      <div class="stack">
+        ${reward("Urban bird walk", "900 GC", "A grown-up books this with a local host.", "Unlock", true)}
+        ${reward("Climate lab", "700 GC", "A short workshop. Booking is confirmed by a grown-up.", "Unlock", false)}
+        ${reward("Nature adventure", "2,000 GC", "Level 4 is enough. You need 760 more GC.", "Not enough GC", false)}
+      </div>
+    `;
+  },
+  me() {
+    return `
+      <div class="card stack" style="align-items:center;text-align:center">
+        ${chiku("happy", 140, 4)}
+        <p class="kicker">Level 4</p>
+        <h2>Nature explorer</h2>
+        <p class="muted">260 GC to Guardian</p>
+        <div class="bar" style="width:100%" role="progressbar" aria-valuenow="240" aria-valuemin="0" aria-valuemax="500" aria-label="Progress to next level"><span style="width:48%"></span></div>
+      </div>
+      <h3 style="margin:14px 0 8px">Badges</h3>
+      <div class="grid3">
+        <div class="badge earned">Water guardian</div>
+        <div class="badge earned">First quiz</div>
+        <div class="badge locked">🔒 Waste warrior</div>
+        <div class="badge locked">🔒 7-day streak</div>
+        <div class="badge locked">🔒 Story starter</div>
+        <div class="badge locked">🔒 League climber</div>
+      </div>
+      <h3 style="margin:14px 0 8px">Worlds</h3>
+      <div class="row">
+        <div class="ring" style="border-color:var(--blue)">3/5</div>
+        <div class="ring">0/5</div>
+        <div class="ring">0/3</div>
+      </div>
+      <h3 style="margin:14px 0 8px">Green Credit history</h3>
+      <div class="card" style="padding:6px">
+        <div class="hist"><span></span><span>✓</span><span>Rain watcher</span><b>+70</b></div>
+        <div class="hist"><span></span><span>✓</span><span>Leak hunt</span><b>+70</b></div>
+        <div class="hist"><span></span><span>✓</span><span>Tap-off challenge</span><b>+60</b></div>
+      </div>
+    `;
+  },
+  welcome() {
+    return `
+      <div class="stack" style="max-width:460px;margin:12px auto">
+        ${chiku("happy", 96, 1)}
+        <h2>Welcome to Nuvo Circle</h2>
+        <p>Pick a nickname and an avatar. We never ask for a real name.</p>
+        <label>Nickname<br><input id="nick" value="Ishaan" style="width:100%;padding:10px;border-radius:12px;border:2px solid var(--line)" /></label>
+        <div class="row" id="avatars">
+          ${["💧","🌱","🐦","☀️","🐟","⭐"].map((a,i)=>`<button class="avatar-btn" type="button" data-av="${a}" aria-pressed="${i===0}">${a}</button>`).join("")}
+        </div>
+        <button class="btn full" type="button" id="to-grownup">Next</button>
+        <div id="grown" class="hidden stack">
+          <h3>Grown-up step</h3>
+          <p class="tiny">This screen mocks the look of verifiable parental consent. It does not implement it.</p>
+          <ul>
+            <li>A nickname and an avatar stay on this device.</li>
+            <li>Mission notes and photos stay on this device.</li>
+            <li>Nothing here is a real account, and no email is sent.</li>
+          </ul>
+          <label>Parent email (mock, never sent)<br><input type="email" placeholder="name@email.com" style="width:100%;padding:10px;border-radius:12px;border:2px solid var(--line)" /></label>
+          <label class="row"><input type="checkbox" id="consent" /> A grown-up has read this and agrees to the demo.</label>
+          <button class="btn full" type="button" id="to-league">Next</button>
+        </div>
+        <div id="league-opt" class="hidden stack">
+          <h3>Class league</h3>
+          <p>Other children would see your nickname and avatar, not a photo or a real name.</p>
+          <label class="row"><input type="checkbox" id="show-league" /> Show me on the class league</label>
+          <p class="tiny">Off unless you turn it on.</p>
+          <button class="btn full" type="button" data-screen="path">Finish</button>
+        </div>
+      </div>
+    `;
+  },
+  parent() {
+    return `
+      <h2>Grown-up view</h2>
+      <p class="muted">Ishaan · nickname and avatar only</p>
+      <div class="grid3" style="margin:12px 0">
+        <div class="card"><p class="tiny">Level</p><h2>4</h2><p>Nature explorer</p></div>
+        <div class="card"><p class="tiny">Streak</p><h2>6</h2><p>days</p></div>
+        <div class="card"><p class="tiny">Green Credits</p><h2>1,240</h2></div>
+      </div>
+      <h3>Pending approvals</h3>
+      <article class="card between" style="margin:8px 0">
+        <div class="row"><div class="badge">📷</div><div><b>Water detective</b><p class="muted">Photo stays on this device</p><p class="tiny">Review time <span id="timer">0:12</span></p></div></div>
+        <div class="stack"><button class="btn" type="button">Approve</button><button class="btn ghost" type="button">Ask to redo</button></div>
+      </article>
+      <article class="card" style="margin:8px 0"><h3>Family mission this week</h3><p>Leak hunt, together. Check the taps for drips.</p></article>
+      <article class="card" style="margin:8px 0"><h3>Upcoming experience</h3><p class="muted">None yet. When Ishaan unlocks one, you confirm the booking.</p></article>
+      <article class="card stack">
+        <h3>Privacy and data</h3>
+        <p>Stored on this device: nickname, avatar, mission notes, quiz results, and photos. No ads. No trackers.</p>
+        <label class="row"><input type="checkbox" checked /> Show on the class league</label>
+        <div class="row"><button class="btn ghost" type="button">Manage consent</button><button class="btn ghost" type="button">Export data</button><button class="btn ghost" type="button">Delete data</button></div>
+      </article>
+    `;
+  },
+  teacher() {
+    return `
+      <h2>Class overview</h2>
+      <div class="grid3" style="margin:12px 0">
+        <div class="card"><p class="tiny">Students</p><h2>30</h2></div>
+        <div class="card"><p class="tiny">Active this week</p><h2>18</h2></div>
+        <div class="card"><p class="tiny">Missions completed</p><h2>46</h2></div>
+      </div>
+      <article class="card stack">
+        <h3>Assign a mission</h3>
+        <label>Mission<br>
+          <select style="width:100%;padding:8px;border-radius:12px;border:2px solid var(--line)">
+            <option>Water detective</option>
+            <option>Sort it right</option>
+            <option>Nature spotter</option>
+          </select>
+        </label>
+        <button class="btn" type="button">Assign to class</button>
+      </article>
+      <h3 style="margin-top:12px">Review queue</h3>
+      <article class="card between" style="margin-top:8px">
+        <div><b>Ishaan</b> · Water detective<p class="tiny">Review time 0:12 · photo on this device</p></div>
+        <div class="row"><button class="btn" type="button">Approve</button><button class="btn ghost" type="button">Ask to redo</button></div>
+      </article>
+      <button class="btn ghost" type="button" style="margin-top:12px">Export weekly CSV</button>
+    `;
+  },
+  mascot() {
+    const moods = ["idle","happy","thinking","celebrate","curled","sleepy"];
+    return `
+      <h2>Chiku</h2>
+      <p class="muted">Moods at level 4. Sizes 24, 64 and 160. Level 5 adds a gold scarf.</p>
+      <div class="mascot-grid" style="margin-top:12px">
+        ${moods.map(m => `<div class="card mascot-cell"><div>${chiku(m, 64, 4)}</div><p>${m}</p></div>`).join("")}
+      </div>
+      <div class="sizes" style="margin-top:16px">
+        ${chiku("idle", 24, 4)}
+        ${chiku("idle", 64, 4)}
+        ${chiku("idle", 160, 5)}
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="card mascot-cell">${chiku("idle", 80, 1)}<p>Levels 1–2</p></div>
+        <div class="card mascot-cell">${chiku("idle", 80, 4)}<p>Levels 3–4</p></div>
+        <div class="card mascot-cell">${chiku("idle", 80, 6)}<p>Level 5+</p></div>
+      </div>
+    `;
+  },
+  dev() {
+    return `
+      <h2>Dev tools</h2>
+      <p class="muted">Role switch is a demo control. There are no accounts.</p>
+      <div class="row" style="margin:12px 0">
+        <button class="btn" type="button" data-screen="path">Child</button>
+        <button class="btn blue" type="button" data-screen="parent">Parent</button>
+        <button class="btn gold" type="button" data-screen="teacher">Teacher</button>
+      </div>
+      <div class="stack">
+        <button class="btn ghost" type="button">Reset demo data</button>
+        <button class="btn ghost" type="button">Export event log as CSV</button>
+      </div>
+    `;
+  }
+};
+
+function quizCard(title, meta, tone) {
+  const bg = tone === "blue" ? "var(--blue-pale)" : tone === "green" ? "var(--green-pale)" : "var(--purple-pale)";
+  return `<button class="card stack" type="button" data-screen="quiz" style="text-align:left;background:${bg}"><h3>${title}</h3><p class="muted">${meta}</p><span class="pill">+20 GC first try</span></button>`;
+}
+function reward(title, cost, copy, state, primary) {
+  const btn = state === "Unlock"
+    ? `<button class="btn ${primary ? "" : "blue"}" type="button" data-unlock="${title}">Unlock</button>`
+    : `<button class="btn" type="button" disabled>${state}</button>`;
+  return `<article class="card between"><div><h3>${title}</h3><p class="muted">${copy}</p></div><div class="stack" style="align-items:flex-end"><span class="pill">${cost}</span>${btn}</div></article>`;
+}
+
+const steps = {
+  learn: `<div class="row">${chiku("thinking", 64, 4)}<div><h3>Learn</h3><p>Water can leave the house in quiet ways: a drip, a long shower, a hose left on. Finding them is the skill.</p><button class="btn ghost" type="button" data-screen="story">Read the water story</button></div></div><button class="btn" type="button" data-step="do">Continue</button>`,
+  do: `<h3>Do</h3><p>Walk through home with a grown-up. Find 3 places water is being wasted. Write them down.</p><p class="pill pink">Adult-supervised</p><p class="tiny">This home mission has no distance. Outdoor walks offer 500 m or 1 km.</p><button class="btn" type="button" data-step="prove">I did it</button>`,
+  prove: `<h3>Prove</h3><p>Add a photo of your notes or of one of the places. It stays on this device.</p><input type="file" accept="image/*" capture="environment" aria-label="Add a photo" /><p class="tiny">Stays on this device. Never uploaded.</p><button class="btn" type="button" data-step="reflect">Continue</button>`,
+  reflect: `<h3>Reflect</h3><label>Which place was the easiest to fix?<br><textarea maxlength="140" rows="3" style="width:100%;border:2px solid var(--line);border-radius:12px;padding:8px" placeholder="A short note is plenty."></textarea></label><p class="tiny">140 characters</p><button class="btn full" type="button" id="submit-mission">Send to a grown-up</button><p id="pending" class="hidden kicker">+80 GC pending a grown-up's check</p>`
+};
+
+let current = "path";
+
+function setNav(screen) {
+  document.querySelectorAll(".nav button, .tabbar button").forEach(btn => {
+    const on = btn.dataset.screen === screen;
+    if (on) btn.setAttribute("aria-current", "page");
+    else btn.removeAttribute("aria-current");
+  });
+}
+
+function show(screen) {
+  current = screen;
+  const bare = screen === "welcome";
+  document.getElementById("topbar").classList.toggle("hidden", bare);
+  document.getElementById("shell").style.display = bare ? "block" : "";
+  document.querySelector(".tabbar").classList.toggle("hidden", bare);
+  document.getElementById("rail").innerHTML = bare ? "" : rail();
+  document.getElementById("main").innerHTML = screens[screen]();
+  document.getElementById("menu").classList.add("hidden");
+  setNav(screen === "mission" ? "path" : screen);
+  if (screen === "mission") fillStep("learn");
+  wire();
+}
+
+function fillStep(name) {
+  const body = document.getElementById("step-body");
+  if (!body) return;
+  body.innerHTML = steps[name];
+  document.querySelectorAll(".stepper button").forEach(b => {
+    if (b.dataset.step === name) b.setAttribute("aria-current", "step");
+    else b.removeAttribute("aria-current");
+  });
+  wire();
+}
+
+function wire() {
+  document.querySelectorAll("[data-screen]").forEach(el => {
+    el.onclick = () => show(el.dataset.screen);
+  });
+  document.querySelectorAll("[data-step]").forEach(el => {
+    el.onclick = (e) => { e.stopPropagation(); fillStep(el.dataset.step); };
+  });
+  const sheet = document.getElementById("sheet");
+  document.querySelectorAll("[data-node]").forEach(node => {
+    node.onclick = () => {
+      const kind = node.dataset.node;
+      sheet.classList.remove("hidden");
+      if (kind === "current") {
+        sheet.innerHTML = `<h3>Water detective</h3><p>Find 3 places water is wasted at home.</p><p class="pill">+80 GC</p><button class="btn full" type="button" data-screen="mission" style="margin-top:8px">Start</button>`;
+      } else if (kind === "done") {
+        sheet.innerHTML = `<h3>Already done</h3><p>You can read it again any time.</p><button class="btn ghost full" type="button" data-screen="mission">Look again</button>`;
+      } else {
+        sheet.innerHTML = `<h3>Locked</h3><p>Finish Water detective to open the next mission.</p>`;
+      }
+      wire();
+    };
+  });
+  const submit = document.getElementById("submit-mission");
+  if (submit) submit.onclick = () => {
+    document.getElementById("pending").classList.remove("hidden");
+    submit.disabled = true;
+  };
+  const grown = document.getElementById("to-grownup");
+  if (grown) grown.onclick = () => document.getElementById("grown").classList.remove("hidden");
+  const toLeague = document.getElementById("to-league");
+  if (toLeague) toLeague.onclick = () => {
+    if (!document.getElementById("consent").checked) return;
+    document.getElementById("league-opt").classList.remove("hidden");
+  };
+  document.querySelectorAll("[data-unlock]").forEach(btn => {
+    btn.onclick = () => {
+      document.getElementById("modal-root").innerHTML = `
+        <div class="modal-back" id="modal">
+          <div class="card modal stack">
+            <h3>Unlock ${btn.dataset.unlock}?</h3>
+            <p>This spends Green Credits. A grown-up will be asked to confirm the booking.</p>
+            <div class="row"><button class="btn" type="button" id="confirm">Unlock</button><button class="btn ghost" type="button" id="cancel">Not now</button></div>
+            <p id="voucher" class="hidden kicker">Unlocked. A grown-up will be asked to confirm the booking.</p>
+          </div>
+        </div>`;
+      document.getElementById("cancel").onclick = () => { document.getElementById("modal-root").innerHTML = ""; };
+      document.getElementById("confirm").onclick = () => document.getElementById("voucher").classList.remove("hidden");
+    };
+  });
+  const school = document.getElementById("school-tab");
+  const city = document.getElementById("city-tab");
+  if (school) {
+    const empty = `<div class="card stack" style="align-items:center;text-align:center">${chiku("idle", 72, 4)}<h3>Class league is the one with people in it</h3><p>School and city boards arrive later. Your class list is ready now.</p></div>`;
+    school.onclick = () => { document.getElementById("league-body").innerHTML = empty; };
+    city.onclick = () => { document.getElementById("league-body").innerHTML = empty; };
+  }
+}
+
+document.getElementById("avatar").onclick = (e) => {
+  e.stopPropagation();
+  document.getElementById("menu").classList.toggle("hidden");
+};
+document.getElementById("desk").onclick = () => {
+  document.getElementById("app").classList.remove("phone");
+  document.getElementById("desk").setAttribute("aria-pressed", "true");
+  document.getElementById("phone").setAttribute("aria-pressed", "false");
+};
+document.getElementById("phone").onclick = () => {
+  document.getElementById("app").classList.add("phone");
+  document.getElementById("phone").setAttribute("aria-pressed", "true");
+  document.getElementById("desk").setAttribute("aria-pressed", "false");
+};
+document.getElementById("logo-chiku").innerHTML = chiku("idle", 36, 4);
+document.getElementById("rail").innerHTML = rail();
+show("path");
+</script>
+</body>
+</html>

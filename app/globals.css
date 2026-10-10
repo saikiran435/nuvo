@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-green: #6bbf3a;
+  --color-green-dark: #3f7a1e;
+  --color-green-deep: #245c18;
+  --color-green-pale: #e7f6d8;
+  --color-blue: #4aa8d8;
+  --color-blue-dark: #2e7eab;
+  --color-blue-pale: #e5f4fb;
+  --color-purple: #8b6bb8;
+  --color-purple-dark: #684a96;
+  --color-purple-pale: #f3ecfa;
+  --color-gold: #f5c542;
+  --color-gold-dark: #c99612;
+  --color-gold-pale: #fff4d4;
+  --color-orange: #e07a4c;
+  --color-orange-dark: #b85a32;
+  --color-pink: #e07a5f;
+  --color-pink-dark: #b85a42;
+  --color-ink: #3c3c3c;
+  --color-ink-soft: #5e5a54;
+  --color-ink-mute: #9a9288;
+  --color-line: #e6dccb;
+  --color-bg: #fffbf4;
+  --color-bg-soft: #f4efe4;
+  --color-cream: #fff6e4;
+  --font-display: var(--font-baloo), "Baloo 2", system-ui, sans-serif;
+  --font-body: var(--font-nunito), "Nunito", system-ui, sans-serif;
+  --breakpoint-desktop: 56.3125rem;
+}
+
+html {
+  background: var(--color-bg-soft);
+  color: var(--color-ink);
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font-body);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-blue-dark);
+  outline-offset: 2px;
+}
+
+@keyframes nuvo-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 200 0 / 55%);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgb(255 200 0 / 0%);
+  }
+}
+
+.node-current {
+  animation: nuvo-pulse 1.6s ease-in-out infinite;
+}
+
+.chiku-bounce {
+  animation: nuvo-bounce 0.8s ease;
+}
+
+@keyframes nuvo-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-current,
+  .chiku-bounce {
+    animation: none;
+  }
+}
